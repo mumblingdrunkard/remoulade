@@ -1,10 +1,7 @@
 { pkgs ? import <nixpkgs> { } }:
-let 
-  manifest = (pkgs.lib.importTOML ./Cargo.toml).package;
-in
-  pkgs.rustPlatform.buildRustPackage rec {
-    pname = manifest.name;
-    version = manifest.version;
-    cargoLock.lockFile = ./Cargo.lock;
-    src = pkgs.lib.cleanSource ./.;
-  }
+pkgs.rustPlatform.buildRustPackage rec {
+  pname = "remoulade";
+  version = "0.1.0";
+  cargoLock.lockFile = ./Cargo.lock;
+  src = pkgs.lib.cleanSource ./.;
+}
