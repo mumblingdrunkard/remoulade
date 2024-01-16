@@ -12,7 +12,7 @@ mod helpers {
     macro_rules! getter {
         ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $getter:ident, bool, $pos:literal) => {
             $(#[$a])*
-            $vis fn $getter(&self) -> bool {
+            $vis const fn $getter(&self) -> bool {
                 self.0 & 1 << $pos != 0
             }
         };
@@ -41,14 +41,16 @@ mod helpers {
                 $(;
                     let val = val << $pad;
                 )?;
-                <$u>::from(val)
+                paste::paste! {
+                    <$u>::[<from_ $t>](val)
+                }
             }
         };
 
         ( @unsigned, $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $getter:ident, $u:ty, [$($msb:literal:$lsb:literal),+] $(,$pad:literal)?) => {
             $(#[$a])*
             #[allow(redundant_semicolons)]
-            $vis fn $getter(&self) -> $u {
+            $vis const fn $getter(&self) -> $u {
                 let val = 0;
                 $(;
                     let mask = !((!0 << ($msb - $lsb + 1)) as $u);
@@ -64,7 +66,7 @@ mod helpers {
         ( @signed, $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $getter:ident, $u:ty, [$($msb:literal:$lsb:literal),+] $(,$pad:literal)?) => {
             $(#[$a])*
             #[allow(redundant_semicolons)]
-            $vis fn $getter(&self) -> $u {
+            $vis const fn $getter(&self) -> $u {
                 let val = 0;
                 let len = 0;
                 $(;
@@ -107,12 +109,9 @@ mod helpers {
             $(#[$a])*
             #[allow(redundant_semicolons)]
             $vis fn $setter(&mut self, val: $u) {
-                let _initial = <$t>::from(val);
-                $(;
-                    let mask = !(!0 << $pad);
-                    debug_assert!(_initial & mask == 0, "<{}>::from({:?}) produced a value `{}` with a non-zero value in the padding when calling setter `{}`. I.e. one of the lower {} bits was non-zero after converting from the input type `{}` to the inner type `{}`.", std::stringify!($t), val, _initial, std::stringify!($setter), std::stringify!($pad), std::stringify!($u), std::stringify!($t));
-                )?;
-
+                paste::paste! {
+                    let _initial = val.[<as_ $t>]();
+                }
                 let len = 0;
                 $(;
                     let len = len + ($msb - $lsb + 1);
@@ -224,7 +223,102 @@ mod helpers {
         };
     }
 
-    pub use {debug_fields, fields, getter, setter};
+    #[macro_export]
+    macro_rules! builder_fields {
+        ( $t:ty, { } ) => {};
+        ( $t:ty, {
+            $(#[$a:meta])*
+            $vis:vis $getter:ident$(, $svis:vis $setter:ident)?: $u:tt @ $bits:tt $(<< $pad:expr)?,
+            $($rest:tt)*
+        } ) => {
+            $(#[$a])*
+            #[allow(redundant_semicolons)]
+            pub const fn $getter(mut self, val: $u) -> Self {
+                $crate::helpers::builder_fields!( @inner, $t, self, val, $u, $bits$(, $pad)?)
+            }
+            $crate::helpers::builder_fields!( $t, { $($rest)* });
+        };
+
+        ( @inner, $t:ty, $vis:vis, $getter:ident, $arg:ident, bool, $pos:tt) => { {
+            const UNSET: $t = !(1 << $pos);
+            let set = ($arg as $t) << $pos;
+            Self ((self.0 & UNSET) | set)
+        } };
+        ( @inner, $t:ty, $self:ident, $arg:ident, u8, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, u8, $bits$(, $pad)? ) };
+        ( @inner, $t:ty, $self:ident, $arg:ident, u16, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, u16, $bits$(, $pad)?) };
+        ( @inner, $t:ty, $self:ident, $arg:ident, u32, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, u32, $bits$(, $pad)?) };
+        ( @inner, $t:ty, $self:ident, $arg:ident, u64, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, u64, $bits$(, $pad)?) };
+        ( @inner, $t:ty, $self:ident, $arg:ident, u128, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, u128, $bits$(, $pad)?) };
+        ( @inner, $t:ty, $self:ident, $arg:ident, i8, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, i8, $bits$(, $pad)?) };
+        ( @inner, $t:ty, $self:ident, $arg:ident, i16, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, i16, $bits$(, $pad)?) };
+        ( @inner, $t:ty, $self:ident, $arg:ident, i32, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, i32, $bits$(, $pad)?) };
+        ( @inner, $t:ty, $self:ident, $arg:ident, i64, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, i64, $bits$(, $pad)?) };
+        ( @inner, $t:ty, $self:ident, $arg:ident, i128, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, i128, $bits$(, $pad)?) };
+
+        ( @integer, $t:ty, $self:ident, $arg:ident, $u:ty, [$($msb:literal:$lsb:literal),+]$(, $pad:expr)?) => { {
+            let len = 0;
+            $(;
+                let len = len + ($msb - $lsb + 1);
+            )*;
+            $(;
+                let len = len + $pad;
+            )?;
+
+
+            let _val = $arg << (<$u>::BITS - len);
+
+            $(;
+                let len = $msb - $lsb + 1;
+                let mask = !(!0 << len);
+                let frag = (_val >> (<$u>::BITS - len)) as $t;
+                // Shift away the bits we extracted
+                let _val = _val << len;
+                // Shift mask and fragment into position
+                let mask = mask << $lsb;
+                let frag = frag << $lsb;
+                $self.0 = $self.0 & !mask | frag & mask;
+            )*;
+
+            $self
+        } };
+
+        ( @inner, $t:ty, $self:ident, $arg:ident, $u:tt, [$($msb:literal:$lsb:literal),+]$(, $pad:expr)?) => { {
+            paste::paste! {
+                let _initial = $arg.[<as_ $t>]();
+            }
+            $(;
+                let mask = !(!0 << $pad);
+                debug_assert!(_initial & mask == 0, "<{}>::from({:?}) produced a value `{}` with a non-zero value in the padding when calling setter `{}`. I.e. one of the lower {} bits was non-zero after converting from the input type `{}` to the inner type `{}`.", std::stringify!($t), val, _initial, std::stringify!($setter), std::stringify!($pad), std::stringify!($u), std::stringify!($t));
+            )?;
+
+            let len = 0;
+            $(;
+                let len = len + ($msb - $lsb + 1);
+            )*;
+            $(;
+                let len = len + $pad;
+            )?;
+
+            let _val = _initial << (<$t>::BITS - len);
+
+            $(;
+                let len = $msb - $lsb + 1;
+                let mask = !(!0 << len);
+                let frag = _val >> (<$t>::BITS - len);
+                // Shift away the bits we extracted
+                let _val = _val << len;
+                // Shift mask and fragment into position
+                let mask = mask << $lsb;
+                let frag = frag << $lsb;
+                // Apply mask and fragment
+                $self.0 = ($self.0 & !mask) | (frag & mask);
+            )*;
+
+            $self
+        } };
+    }
+
+    pub use {builder_fields, debug_fields, fields, getter, setter};
 }
 
 #[macro_export]
@@ -236,6 +330,45 @@ macro_rules! bitfield {
     ( $(#[$a:meta])* $vis:vis struct $name:ident(u128) $($rest:tt)* ) => { $crate::bitfield!(@real, $(#[$a])*, $vis, $name, u128, $($rest)*); };
 
     ( @real, $(#[$a:meta])*, $vis:vis, $name:ident, $t:ty, with Debug $body:tt ) => {
+        $(#[$a])*
+        $vis struct $name(pub $t);
+        impl std::fmt::Debug for $name {
+            $crate::helpers::debug_fields!($name, $body);
+        }
+        impl $name { $crate::helpers::fields!($name, $t, $body); }
+    };
+
+    ( @real, $(#[$a:meta])*, $vis:vis, $name:ident, $t:ty, with Debug + Builder $body:tt ) => {
+        $(#[$a])*
+        $vis struct $name(pub $t);
+        impl std::fmt::Debug for $name {
+            $crate::helpers::debug_fields!($name, $body);
+        }
+        impl $name { $crate::helpers::fields!($name, $t, $body); }
+
+        paste::paste!{
+            $vis struct [<$name Builder>](pub $t);
+            impl [<$name Builder>] {
+                $crate::helpers::builder_fields!($t, $body);
+            }
+            impl [<$name Builder>] {
+                pub const fn build(self) -> $name {
+                    $name(self.0)
+                }
+            }
+            impl $name {
+                pub const fn builder() -> [<$name Builder>] {
+                    [<$name Builder>](0)
+                }
+            }
+        }
+    };
+
+    ( @real, $(#[$a:meta])*, $vis:vis, $name:ident, $t:ty, with Builder + Debug $body:tt ) => {
+        $crate::bitfield!(@real, $(#[$a])*, $vis, $name, $t, with Debug + Builder $body);
+    };
+
+    ( @real, $(#[$a:meta])*, $vis:vis, $name:ident, $t:ty, with Builder $body:tt ) => {
         $(#[$a])*
         $vis struct $name(pub $t);
         impl std::fmt::Debug for $name {
@@ -294,8 +427,8 @@ mod tests {
         };
     }
 
-    impl From<u32> for Opcode {
-        fn from(value: u32) -> Self {
+    impl Opcode {
+        pub const fn from_u32(value: u32) -> Self {
             use Opcode::*;
             match value {
                 0b0000011 => Load,
@@ -328,9 +461,9 @@ mod tests {
         }
     }
 
-    impl From<Opcode> for u32 {
-        fn from(value: Opcode) -> Self {
-            value as u32
+    impl Opcode {
+        pub const fn as_u32(&self) -> u32 {
+            *self as u32
         }
     }
 
@@ -380,8 +513,8 @@ mod tests {
         };
     }
 
-    impl From<u32> for Rd {
-        fn from(value: u32) -> Self {
+    impl Rd {
+        pub const fn from_u32(value: u32) -> Self {
             use Rd::*;
             match value {
                 0 => X0,
@@ -419,13 +552,11 @@ mod tests {
                 _ => panic!(),
             }
         }
-    }
 
-    impl From<Rd> for u32 {
-        fn from(value: Rd) -> u32 {
-            match value {
+        pub const fn as_u32(&self) -> u32 {
+            match *self {
                 Rd::X0 => 0,
-                _ => value as u32,
+                value => value as u32,
             }
         }
     }
@@ -476,8 +607,8 @@ mod tests {
         };
     }
 
-    impl From<u32> for Rs {
-        fn from(value: u32) -> Self {
+    impl Rs {
+        pub const fn from_u32(value: u32) -> Self {
             use Rs::*;
             match value {
                 0 => X0,
@@ -515,20 +646,18 @@ mod tests {
                 _ => panic!(),
             }
         }
-    }
 
-    impl From<Rs> for u32 {
-        fn from(value: Rs) -> u32 {
-            match value {
+        pub const fn as_u32(&self) -> u32 {
+            match *self {
                 Rs::X0 => 0,
-                _ => value as u32,
+                _ => *self as u32,
             }
         }
     }
 
     bitfield! {
         #[derive(Clone, Copy, Default)]
-        pub struct BType(u32) with Debug {
+        pub struct BType(u32) with Debug + Builder {
             pub opcode, pub set_opcode: Opcode @ [6:0],
             pub funct3, pub set_funct3: u32 @ [14:12],
             pub rs1, pub set_rs1: Rs @ [19:15],
@@ -633,5 +762,22 @@ mod tests {
             assert_eq!(before, (b.opcode(), b.funct3(), b.rs1(), b.rs2()));
             assert_eq!(imm, b.imm());
         }
+    }
+
+    #[test]
+    fn test_btype_builder() {
+        const B: BType = BType::builder()
+            .opcode(Opcode::Load)
+            .funct3(3)
+            .rs1(Rs::X2)
+            .rs2(Rs::X5)
+            .imm(-20)
+            .build();
+
+        assert_eq!(B.opcode(), Opcode::Load);
+        assert_eq!(B.funct3(), 3);
+        assert_eq!(B.rs1(), Rs::X2);
+        assert_eq!(B.rs2(), Rs::X5);
+        assert_eq!(B.imm(), -20);
     }
 }
