@@ -7,7 +7,7 @@
 //
 // Copyright (C) 2024 mumblingdrunkard
 
-mod helpers {
+pub mod helpers {
     #[macro_export]
     macro_rules! getter {
         ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $getter:ident, bool, $pos:literal) => {
@@ -92,17 +92,17 @@ mod helpers {
         };
 
         // Entry points for supported signed/unsigned types
-        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, u8, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@signed_unsigned, $name, $t, $(#[$a])*, $vis, $setter, u8, $ranges $(,$pad)?); };
-        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, u16, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@signed_unsigned, $name, $t, $(#[$a])*, $vis, $setter, u16, $ranges $(,$pad)?); };
-        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, u32, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@signed_unsigned, $name, $t, $(#[$a])*, $vis, $setter, u32, $ranges $(,$pad)?); };
-        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, u64, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@signed_unsigned, $name, $t, $(#[$a])*, $vis, $setter, u64, $ranges $(,$pad)?); };
-        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, u128, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@signed_unsigned, $name, $t, $(#[$a])*, $vis, $setter, u128, $ranges $(,$pad)?); };
+        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, u8, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@integer, $name, $t, $(#[$a])*, $vis, $setter, u8, $ranges $(,$pad)?); };
+        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, u16, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@integer, $name, $t, $(#[$a])*, $vis, $setter, u16, $ranges $(,$pad)?); };
+        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, u32, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@integer, $name, $t, $(#[$a])*, $vis, $setter, u32, $ranges $(,$pad)?); };
+        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, u64, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@integer, $name, $t, $(#[$a])*, $vis, $setter, u64, $ranges $(,$pad)?); };
+        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, u128, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@integer, $name, $t, $(#[$a])*, $vis, $setter, u128, $ranges $(,$pad)?); };
 
-        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, i8, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@signed_unsigned, $name, $t, $(#[$a])*, $vis, $setter, i8, $ranges $(,$pad)?); };
-        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, i16, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@signed_unsigned, $name, $t, $(#[$a])*, $vis, $setter, i16, $ranges $(,$pad)?); };
-        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, i32, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@signed_unsigned, $name, $t, $(#[$a])*, $vis, $setter, i32, $ranges $(,$pad)?); };
-        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, i64, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@signed_unsigned, $name, $t, $(#[$a])*, $vis, $setter, i64, $ranges $(,$pad)?); };
-        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, i128, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@signed_unsigned, $name, $t, $(#[$a])*, $vis, $setter, i128, $ranges $(,$pad)?); };
+        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, i8, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@integer, $name, $t, $(#[$a])*, $vis, $setter, i8, $ranges $(,$pad)?); };
+        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, i16, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@integer, $name, $t, $(#[$a])*, $vis, $setter, i16, $ranges $(,$pad)?); };
+        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, i32, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@integer, $name, $t, $(#[$a])*, $vis, $setter, i32, $ranges $(,$pad)?); };
+        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, i64, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@integer, $name, $t, $(#[$a])*, $vis, $setter, i64, $ranges $(,$pad)?); };
+        ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, i128, $ranges:tt $(,$pad:literal)?) => { $crate::helpers::setter!(@integer, $name, $t, $(#[$a])*, $vis, $setter, i128, $ranges $(,$pad)?); };
 
         // Support for any other types where impl From<$u> for $t
         ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, $u:ty, [$($msb:literal:$lsb:literal),+] $(,$pad:literal)?) => {
@@ -137,7 +137,7 @@ mod helpers {
             }
         };
 
-        ( @signed_unsigned, $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, $u:ty, [$($msb:literal:$lsb:literal),+] $(,$pad:literal)?) => {
+        ( @integer, $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $setter:ident, $u:ty, [$($msb:literal:$lsb:literal),+] $(,$pad:literal)?) => {
             $(#[$a])*
             #[allow(redundant_semicolons)]
             $vis fn $setter(&mut self, val: $u) {
@@ -322,6 +322,190 @@ mod helpers {
 }
 
 #[macro_export]
+/// Creates a bitfield type
+///
+/// # Uses
+///
+/// Useful for decoding/encoding bitfields up to 128 bits in length.
+///
+/// # Syntax
+///
+/// The syntax for creating bitfields is:
+/// ```ignore
+/// bitfield! {
+///     Meta?
+///     Vis? struct StructName(InnerType) (with Optionals)? {
+///         (
+///             Meta?
+///             Vis? Getter(, Vis? Setter)?: FieldType @ Location
+///         )*
+///     }
+/// }
+/// ```
+///
+/// Where:
+/// - ? or ()? indicates that something is optional.
+/// - `Meta` is metadata such as documentation, attributes, or derives.
+/// - `Vis` is a visibility modifier like `pub`.
+/// - `StructName` is a valid struct name.
+/// - `Innertype` is one of `u8`, `u16`, `u32`, `u64`, `u128`.
+/// - `Optionals` is either `Debug`, `Builder`, `Debug + Builder`, or `Builder + Debug`.
+/// - `Getter` is a valid function name.
+/// - `Setter` is a valid function name.
+/// - `FieldType` is a `bool`, `u8`, `u16`, `u32`, `u64`, `u128`, `i8`, `i16`, `i32`, `i64`, `i128`, or
+///   - for fields that have a getter, any type that has a function with signature `as_InnerType(&self) -> InnerType`, and
+///   - for fields that have a setter, any type that has a function with signature `from_InnerType(val: InnerType) -> Self`.
+/// - Location
+///   - for `FieldType == bool`, is a single literal number in the range 0..InnerType::BITS, and
+///   - for any other `FieldType`, has the format `[(Msb:Lsb)+] [<< Padding]`, where, for each repetition of `Msb:Lsb`, `Msb` and `Lsb` are integer literals and `Msb >= Lsb`.
+///
+/// # Field semantics
+///
+/// ```ignore
+/// pub getter: i32 @ [31:20] << 1,
+/// ```
+/// Declares a field that is constructed from bits in the inclusive range `31:20` and is right-padded with a single 0 bit.
+/// As the value is a signed integer, bit 31 will be used as a sign-bit and the value will be properly sign-extended before it is returned.
+///
+/// The generated code will be similar to
+/// ```ignore
+/// // Assuming struct declared as `struct Bitfield(u32)`
+/// impl Bitfield {
+///     pub const fn getter(&self) -> i32 {
+///         let val = self.0 as i32;
+///         // range
+///         let mask = !0 << (31 - 20 + 1);
+///         let val = (val >> 20) & mask;
+///         // padding
+///         let val = val << 1;
+///         // sign-extension
+///         let val = (val << (u32::BITS - (31 - 20 + 1) - padding)) >> (u32::BITS - (31 - 20 + 1) - padding);
+///         val
+///     }
+/// }
+/// ```
+///
+/// ```ignore
+/// pub getter: i32 @ [31:25, 19:15],
+/// ```
+/// Will generate a getter similar to the one above, but it will extract the ranges in order and concatenate them.
+/// This field will not be padded.
+///
+/// ```ignore
+/// pub getter: bool @ 25,
+/// ```
+/// Is a getter for a single bit at bit position 25.
+///
+/// ```ignore
+/// getter, pub setter: OtherType @ [24:20],
+/// ```
+/// Declares a private getter and a public setter for a non-primitive type that has functions `as_u32` and `from_u32`.
+///
+/// # Optionals
+///
+/// Some extras can be generated optionally.
+///
+/// ## Debug
+///
+/// While common things like `Clone`, `Copy`, `Default`, etc., can be added simply by adding `#[derive(...)]`, `Debug` cannot be derived so easily.
+/// As `#[derive(Debug)]` on a normal `struct` uses the struct members, and bitfields have no members except for the inner representation, we need to handle this specially.
+/// To implement `Debug` automatically, all field types must also implement `Debug`.
+///
+/// ## Builder
+///
+/// As a quality-of-life feature, we can also generate a `StructNameBuilder` with function names equal to the `Getter` names.
+/// Because setters take a `&mut self` argument, they cannot be made `const`, making it difficult to construct bitfields in const contexts.
+///
+/// As the builder pattern uses functions that take `self` instead of `&mut self`, we can mark them as `const`.
+///
+/// Along with the builder itself, we also generate
+/// ```ignore
+/// impl StructName {
+///     pub const fn builder() -> StructNameBuilder { ... }    
+/// }
+/// ```
+/// and
+/// ```ignore
+/// impl StructNameBuilder {
+///     pub const fn build(self) -> StructName { ... }
+/// }
+/// ```.
+///
+/// ## Why there is no `Default` optional
+///
+/// With this, you might expect there to be a `Default` optional to handle setting fields to their default value instead of `#[derive(Default)]` which will simply set the inner representation to 0.
+/// We don't do this automatically because fields are allowed to overlap, which could make any attempt at generating a default implementation futile.
+///
+/// # Examples
+///
+/// One of the motivations for this package was to simplify RISC-V instruction decoding.
+/// RISC-V instructions can have values encoded within them that consist of multiple ranges of bits.
+///
+/// Below is a bitfield to easily interpret a "J-Type" instruction format.
+///
+/// ```
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// pub enum Opcode {
+///     Invalid = 0b0000000,
+///     Load = 0b0000011,
+///     Store = 0b0100011,
+///     Jalr = 0b1100111,
+///     Jal = 0b1101111,
+/// }
+///
+/// impl Opcode {
+///     pub const fn from_u32(value: u32) -> Self {
+///         use Opcode::*;
+///         match value {
+///             0b0000011 => Load,
+///             0b0100011 => Store,
+///             0b1100111 => Jalr,
+///             0b1101111 => Jal,
+///             _ => Invalid,
+///         }
+///     }
+///     pub const fn as_u32(&self) -> u32 {
+///         *self as u32
+///     }
+/// }
+///
+/// #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// enum Rd {
+///     X0 = 0, X1, X2,
+/// }
+///
+/// impl Rd {
+///     const fn from_u32(val: u32) -> Self {
+///         match val {
+///             0 => Rd::X0,
+///             1 => Rd::X1,
+///             2 => Rd::X2,
+///             _ => panic!(),
+///         }
+///     }
+///     const fn as_u32(&self) -> u32 {
+///         *self as u32
+///     }
+/// }
+///
+/// remoulade_bitfield::bitfield! {
+///     #[derive(Clone, Copy, Default)]
+///     pub struct JType(u32) with Debug {
+///         pub opcode, pub set_opcode: Opcode @ [6:0],
+///         pub rd, pub set_rd: Rd @ [11:7],
+///         pub imm, pub set_imm: i32 @ [31:31, 19:12, 20:20, 30:21] << 1,
+///     }
+/// }
+///
+/// let j = JType::builder()
+///     .opcode(Opcode::Jal)
+///     .rd(Rd::X1)
+///     .imm(-46)
+///     .build();
+/// assert_eq!(j.opcode(), Opcode::Jal);
+/// assert_eq!(j.rd(), Rd::X1);
+/// assert_eq!(j.imm(), -46);
+/// ```
 macro_rules! bitfield {
     ( $(#[$a:meta])* $vis:vis struct $name:ident(u8) $($rest:tt)* ) => { $crate::bitfield!(@real, $(#[$a])*, $vis, $name, u8, $($rest)*); };
     ( $(#[$a:meta])* $vis:vis struct $name:ident(u16) $($rest:tt)* ) => { $crate::bitfield!(@real, $(#[$a])*, $vis, $name, u16, $($rest)*); };
@@ -459,9 +643,6 @@ mod tests {
                 _ => Invalid,
             }
         }
-    }
-
-    impl Opcode {
         pub const fn as_u32(&self) -> u32 {
             *self as u32
         }
@@ -667,7 +848,6 @@ mod tests {
     }
 
     bitfield! {
-        #[allow(unused)]
         #[derive(Clone, Copy, Default)]
         pub struct JType(u32) with Debug {
             pub opcode, pub set_opcode: Opcode @ [6:0],
