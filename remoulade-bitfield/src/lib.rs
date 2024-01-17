@@ -41,7 +41,7 @@ pub mod helpers {
                 $(;
                     let val = val << $pad;
                 )?;
-                paste::paste! {
+                $crate::paste::paste! {
                     <$u>::[<from_ $t>](val)
                 }
             }
@@ -109,7 +109,7 @@ pub mod helpers {
             $(#[$a])*
             #[allow(redundant_semicolons)]
             $vis fn $setter(&mut self, val: $u) {
-                paste::paste! {
+                $crate::paste::paste! {
                     let _initial = val.[<as_ $t>]();
                 }
                 let len = 0;
@@ -239,11 +239,12 @@ pub mod helpers {
             $crate::helpers::builder_fields!( $t, { $($rest)* });
         };
 
-        ( @inner, $t:ty, $vis:vis, $getter:ident, $arg:ident, bool, $pos:tt) => { {
+        ( @inner, $t:ty, $self:ident, $arg:ident, bool, $pos:tt) => { {
             const UNSET: $t = !(1 << $pos);
             let set = ($arg as $t) << $pos;
-            Self ((self.0 & UNSET) | set)
+            Self (($self.0 & UNSET) | set)
         } };
+
         ( @inner, $t:ty, $self:ident, $arg:ident, u8, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, u8, $bits$(, $pad)? ) };
         ( @inner, $t:ty, $self:ident, $arg:ident, u16, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, u16, $bits$(, $pad)?) };
         ( @inner, $t:ty, $self:ident, $arg:ident, u32, $bits:tt$(, $pad:expr)?) => { $crate::helpers::builder_fields!( @integer, $t, $self, $arg, u32, $bits$(, $pad)?) };
@@ -283,7 +284,7 @@ pub mod helpers {
         } };
 
         ( @inner, $t:ty, $self:ident, $arg:ident, $u:tt, [$($msb:literal:$lsb:literal),+]$(, $pad:expr)?) => { {
-            paste::paste! {
+            $crate::paste::paste! {
                 let _initial = $arg.[<as_ $t>]();
             }
             $(;
@@ -321,6 +322,8 @@ pub mod helpers {
     pub use {builder_fields, debug_fields, fields, getter, setter};
 }
 
+pub use paste;
+
 #[macro_export]
 /// Creates a bitfield type
 ///
@@ -337,7 +340,7 @@ pub mod helpers {
 ///     Vis? struct StructName(InnerType) (with Optionals)? {
 ///         (
 ///             Meta?
-///             Vis? Getter(, Vis? Setter)?: FieldType @ Location
+///             Vis? Getter(, Vis? Setter)?: FieldType @ Location,
 ///         )*
 ///     }
 /// }
@@ -355,9 +358,9 @@ pub mod helpers {
 /// - `FieldType` is a `bool`, `u8`, `u16`, `u32`, `u64`, `u128`, `i8`, `i16`, `i32`, `i64`, `i128`, or
 ///   - for fields that have a getter, any type that has a function with signature `as_InnerType(&self) -> InnerType`, and
 ///   - for fields that have a setter, any type that has a function with signature `from_InnerType(val: InnerType) -> Self`.
-/// - Location
-///   - for `FieldType == bool`, is a single literal number in the range 0..InnerType::BITS, and
-///   - for any other `FieldType`, has the format `[(Msb:Lsb)+] [<< Padding]`, where, for each repetition of `Msb:Lsb`, `Msb` and `Lsb` are integer literals and `Msb >= Lsb`.
+/// - `Location`
+///   - for `FieldType == bool`, is a single literal number in the range `0..InnerType::BITS`, and
+///   - for any other `FieldType`, has the format `[(Msb:Lsb)+] [<< Padding]`, where, for each repetition of `Msb:Lsb`, `Msb`, `Lsb`, and `Padding` are integer literals and `Msb >= Lsb`.
 ///
 /// # Field semantics
 ///
@@ -429,7 +432,7 @@ pub mod helpers {
 /// impl StructNameBuilder {
 ///     pub const fn build(self) -> StructName { ... }
 /// }
-/// ```.
+/// ```
 ///
 /// ## Why there is no `Default` optional
 ///
@@ -490,7 +493,7 @@ pub mod helpers {
 ///
 /// remoulade_bitfield::bitfield! {
 ///     #[derive(Clone, Copy, Default)]
-///     pub struct JType(u32) with Debug {
+///     pub struct JType(u32) with Debug + Builder {
 ///         pub opcode, pub set_opcode: Opcode @ [6:0],
 ///         pub rd, pub set_rd: Rd @ [11:7],
 ///         pub imm, pub set_imm: i32 @ [31:31, 19:12, 20:20, 30:21] << 1,
@@ -530,7 +533,7 @@ macro_rules! bitfield {
         }
         impl $name { $crate::helpers::fields!($name, $t, $body); }
 
-        paste::paste!{
+        $crate::paste::paste!{
             $vis struct [<$name Builder>](pub $t);
             impl [<$name Builder>] {
                 $crate::helpers::builder_fields!($t, $body);
