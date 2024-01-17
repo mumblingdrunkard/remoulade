@@ -32,7 +32,7 @@ pub mod helpers {
         ( $name:ident, $t:ty, $(#[$a:meta])*, $vis:vis, $getter:ident, $u:ty, [$($msb:literal:$lsb:literal)+] $(,$pad:literal)?) => {
             $(#[$a])*
             #[allow(redundant_semicolons)]
-            $vis fn $getter(&self) -> $u {
+            $vis const fn $getter(&self) -> $u {
                 let val = 0;
                 $(;
                     let mask = !((!0 as $t) << ($msb - $lsb + 1));
